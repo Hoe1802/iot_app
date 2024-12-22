@@ -46,3 +46,4 @@ flutter:
     - assets/certs/DeviceCertificate.crt
     - assets/certs/PrivateKey.key
     - assets/certs/AmazonRootCA1.pem
+    - assets/offline_news.json

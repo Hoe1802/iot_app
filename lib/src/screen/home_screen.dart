@@ -35,26 +35,37 @@ class _HomeScreen extends State<HomeScreen> {
 
   List<NewsModel> articles = []; // Biến lưu danh sách tin tức
 
-  bool isLoadin = true;
+  bool isLoading = true;
   getNews() async {
-    NewsApi newsApi = NewsApi();
-    await newsApi.getNews();
-    articles = newsApi.dataStore;
     setState(() {
-      isLoadin = false;
+      isLoading = true;
+    });
+
+    try {
+      NewsApi newsApi = NewsApi();
+      await newsApi.getNews(); // Lấy dữ liệu từ offline_news.json
+      setState(() {
+        articles = newsApi.dataStore; // Cập nhật danh sách bài viết
+      });
+    } catch (e) {
+      print("Error: $e");
+    }
+
+    setState(() {
+      isLoading = false;
     });
   }
 
   @override
   void initState() {
-    getNews();
     super.initState();
+    getNews();
   }
 
   void _onRefresh() async {
     awsIotProvider.connect().then((isConnected) {
       if (isConnected) {
-        awsIotProvider.publish("home_request","home_request");
+        awsIotProvider.publish("home_request", "home_request");
         awsIotProvider.subscribe('inside_running', alertData);
         awsIotProvider.subscribe('inside_changed', alertData);
         awsIotProvider.subscribe('outside_running', alertData);
@@ -69,6 +80,8 @@ class _HomeScreen extends State<HomeScreen> {
     }).catchError((error) {
       print("Error connecting to MQTT broker: $error");
     });
+
+    await getNews();
     await Future.delayed(Duration(milliseconds: 2000));
     _refreshController.refreshCompleted();
   }
@@ -77,7 +90,7 @@ class _HomeScreen extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 214, 231, 246),
-      body: isLoadin
+      body: isLoading
           ? const Center(
               child: CircularProgressIndicator(),
             )
@@ -179,15 +192,44 @@ class _HomeScreen extends State<HomeScreen> {
                               margin: const EdgeInsets.all(15),
                               child: Column(
                                 children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: Image.network(
-                                      article.urlToImage!,
+                                  if (article.urlToImage != null)
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Image.network(
+                                        article.urlToImage!,
+                                        height: 250,
+                                        width: 400,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return Container(
+                                            height: 250,
+                                            width: 400,
+                                            color: Colors.grey,
+                                            child: Center(
+                                              child: Icon(
+                                                Icons.broken_image,
+                                                size: 50,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    )
+                                  else
+                                    Container(
                                       height: 250,
                                       width: 400,
-                                      fit: BoxFit.cover,
+                                      color: Colors.grey,
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.broken_image,
+                                          size: 50,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                     ),
-                                  ),
                                   const SizedBox(height: 10),
                                   Text(
                                     article.title!,

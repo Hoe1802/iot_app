@@ -14,4 +14,14 @@ class NewsModel {
     this.author,
     this.content,
   });
+
+  factory NewsModel.fromJson(Map<String, dynamic> json) {
+    return NewsModel(
+      title: json['title'] ?? '',
+      urlToImage: json['urlToImage'] ?? '',
+      description: json['description'] ?? '',
+      author: json['author'] ?? '',
+      content: json['content'] ?? '',
+    );
+  }
 }
